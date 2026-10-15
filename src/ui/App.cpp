@@ -102,6 +102,7 @@ ChartScene App::buildScene() const {
     scene.zLoad = project_.load.zAtF0;
     scene.f0Hz = project_.f0Hz;
     scene.network = project_.network;
+    scene.previewNetwork = autoMatchPanel_.previewNetwork();
     scene.highlightedElement = networkPanel_.hoveredElement();
     return scene;
 }
@@ -187,8 +188,9 @@ void App::drawFrame() {
     splitter("##split_net", false, rightW, networkHeight_, kMinPanelHeight, 900.0f, false);
     ImGui::SetCursorScreenPos(ImVec2(rightX, origin.y + networkH + split));
     ImGui::BeginChild("automatch", ImVec2(rightW, topH - networkH - split), ImGuiChildFlags_Borders);
-    panelHeader("AUTO-MATCH (solver)");
-    ImGui::TextColored(kColorTextDim, "Coming in the next step.");
+    if (autoMatchPanel_.draw(project_, chartOptions_.learnMode)) {
+        modified_ = true;
+    }
     ImGui::EndChild();
 
     // --- Séparateur horizontal puis rangée du bas : SWEEP + SCHEMATIC -------------------------------

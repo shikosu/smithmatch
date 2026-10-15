@@ -6,6 +6,7 @@
 #include <string>
 
 #include "core/Project.hpp"
+#include "ui/AutoMatchPanel.hpp"
 #include "ui/NetworkPanel.hpp"
 #include "ui/SetupPanel.hpp"
 #include "ui/SmithChartView.hpp"
@@ -46,6 +47,7 @@ private:
     ChartOptions chartOptions_;
     SetupPanel setupPanel_;
     NetworkPanel networkPanel_;
+    AutoMatchPanel autoMatchPanel_;
 
     // --- Mise en page (en points, avant mise à l'échelle HiDPI) ------------------------
     float leftWidth_ = 350.0f;
