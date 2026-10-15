@@ -74,9 +74,18 @@ endfunction()
 # smith_core — moteur de calcul pur (bibliothèque standard + nlohmann/json)
 # =============================================================================
 # Règle n°4 du projet : aucune dépendance graphique ici (ni ImGui, ni GLFW).
-add_library(smith_core INTERFACE)
-target_include_directories(smith_core INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_link_libraries(smith_core INTERFACE nlohmann_json::nlohmann_json)
+add_library(smith_core STATIC
+    src/core/Units.cpp
+    src/core/RfMath.cpp
+    src/core/Element.cpp
+    src/core/Load.cpp
+    src/core/Network.cpp
+    src/core/ESeries.cpp
+    src/core/Validation.cpp)
+target_include_directories(smith_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+# Seule dépendance externe autorisée : nlohmann/json (bibliothèque d'en-têtes).
+target_link_libraries(smith_core PUBLIC nlohmann_json::nlohmann_json)
+smith_enable_warnings(smith_core)
 
 # =============================================================================
 # smithmatch — l'application graphique
@@ -130,7 +139,11 @@ endif()
 if(SMITH_BUILD_TESTS)
     enable_testing()
     add_executable(smith_tests
-        tests/test_main.cpp)
+        tests/test_main.cpp
+        tests/test_units.cpp
+        tests/test_rfmath.cpp
+        tests/test_elements_network.cpp
+        tests/test_eseries.cpp)
     target_link_libraries(smith_tests PRIVATE smith_core doctest::doctest)
     smith_enable_warnings(smith_tests)
     # Une seule entrée ctest qui exécute tous les cas de test doctest.
