@@ -120,3 +120,10 @@ TEST_CASE("formatEng then parseEng round-trips within display precision") {
         CHECK(*parsed == doctest::Approx(v).epsilon(1e-5));
     }
 }
+
+TEST_CASE("formatComplex") {
+    CHECK(smith::formatComplex(smith::Complex(25.0, -15.0)) == "25 \xE2\x88\x92 j15");
+    CHECK(smith::formatComplex(smith::Complex(50.0, 0.0)) == "50 + j0");
+    CHECK(smith::formatComplex(smith::Complex(0.5, 0.3), 3) == "0.5 + j0.3");
+    CHECK(smith::formatComplex(smith::Complex(-5.0, 12.5), 3) == "-5 + j12.5");
+}

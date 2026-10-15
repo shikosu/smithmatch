@@ -81,7 +81,8 @@ add_library(smith_core STATIC
     src/core/Load.cpp
     src/core/Network.cpp
     src/core/ESeries.cpp
-    src/core/Validation.cpp)
+    src/core/Validation.cpp
+    src/core/Project.cpp)
 target_include_directories(smith_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 # Seule dépendance externe autorisée : nlohmann/json (bibliothèque d'en-têtes).
 target_link_libraries(smith_core PUBLIC nlohmann_json::nlohmann_json)
@@ -96,7 +97,9 @@ if(SMITH_BUILD_APP)
     add_executable(smithmatch WIN32 MACOSX_BUNDLE
         src/main.cpp
         src/ui/App.cpp
-        src/ui/Theme.cpp)
+        src/ui/Theme.cpp
+        src/ui/LearnText.cpp
+        src/ui/SmithChartView.cpp)
 
     # Polices intégrées dans l'exécutable (voir cmake/EmbedResource.cmake).
     smith_embed_resource(smithmatch

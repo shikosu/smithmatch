@@ -41,6 +41,19 @@ double s11Db(double gammaMag);
 // Pertes de désadaptation (dB) = −10·log10(1 − |Γ|²). +∞ si |Γ| ≥ 1.
 double mismatchLossDb(double gammaMag);
 
+// Toutes les grandeurs d'adaptation calculées à partir de Z_in (affichées dans RESULTS).
+struct MatchMetrics {
+    Complex zIn;              // impédance d'entrée (Ω)
+    Complex gammaM;           // Γ_m = (Z_in − Z_s*)/(Z_in + Z_s)
+    double gammaMag = 0.0;    // |Γ_m|
+    double gammaAngleDeg = 0.0;
+    double vswr = 1.0;
+    double returnLossDb = 0.0;
+    double s11Db = 0.0;
+    double mismatchLossDb = 0.0;
+};
+MatchMetrics evaluateMatch(Complex zIn, Complex zSource);
+
 // Γ → pixel de l'écran : centre + rayon·(Re Γ, −Im Γ).
 // Le signe « − » vient de l'axe Y de l'écran, orienté vers le bas.
 Point2 gammaToScreen(Complex gamma, Point2 center, double radiusPx);

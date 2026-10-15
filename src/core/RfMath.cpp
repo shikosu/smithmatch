@@ -85,6 +85,19 @@ double mismatchLossDb(double gammaMag) {
     return -10.0 * std::log10(transmitted);
 }
 
+MatchMetrics evaluateMatch(Complex zIn, Complex zSource) {
+    MatchMetrics m;
+    m.zIn = zIn;
+    m.gammaM = matchGamma(zIn, zSource);
+    m.gammaMag = std::abs(m.gammaM);
+    m.gammaAngleDeg = std::arg(m.gammaM) * 180.0 / kPi;
+    m.vswr = vswr(m.gammaMag);
+    m.returnLossDb = returnLossDb(m.gammaMag);
+    m.s11Db = s11Db(m.gammaMag);
+    m.mismatchLossDb = mismatchLossDb(m.gammaMag);
+    return m;
+}
+
 // pixel = centre + rayon·(Re Γ, −Im Γ)
 Point2 gammaToScreen(Complex gamma, Point2 center, double radiusPx) {
     return Point2{center.x + radiusPx * gamma.real(), center.y - radiusPx * gamma.imag()};

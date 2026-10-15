@@ -1,5 +1,5 @@
 // =============================================================================
-// App.cpp — Boucle principale et squelette de l'interface (étape 1)
+// App.cpp — Boucle principale et mise en page de l'interface
 // =============================================================================
 #include "ui/App.hpp"
 
@@ -13,7 +13,7 @@
 namespace smith::ui {
 
 App::App(GLFWwindow* window, const Fonts& fonts, const std::string& /*initialFile*/)
-    : window_(window), fonts_(fonts) {}
+    : window_(window), fonts_(fonts), project_(defaultProject()) {}
 
 // -----------------------------------------------------------------------------
 // run : à chaque tour de boucle (≈ 60 fois par seconde) on
@@ -45,6 +45,19 @@ void App::run() {
 }
 
 // -----------------------------------------------------------------------------
+// buildScene : transforme le projet en « scène » pour l'abaque.
+// -----------------------------------------------------------------------------
+ChartScene App::buildScene() const {
+    ChartScene scene;
+    scene.z0 = project_.z0;
+    scene.zSource = project_.zSource;
+    scene.zLoad = project_.load.zAtF0;
+    scene.f0Hz = project_.f0Hz;
+    scene.network = project_.network;
+    return scene;
+}
+
+// -----------------------------------------------------------------------------
 // drawFrame : une fenêtre ImGui qui occupe toute la fenêtre du système.
 // -----------------------------------------------------------------------------
 void App::drawFrame() {
@@ -54,15 +67,11 @@ void App::drawFrame() {
     const ImGuiWindowFlags hostFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
                                        ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar |
                                        ImGuiWindowFlags_NoBringToFrontOnFocus;
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
     ImGui::Begin("##host", nullptr, hostFlags);
+    ImGui::PopStyleVar();
     drawMenuBar();
-
-    ImGui::PushFont(fonts_.semibold, kTitleFontSize);
-    ImGui::TextColored(kColorHeader, "%s v%s", kAppName, kAppVersion);
-    ImGui::PopFont();
-    ImGui::TextUnformatted("Glyph check: \xCE\xA9 \xC2\xB5 \xCE\x93 \xC2\xB1 \xC2\xB0 "
-                           "\xE2\x89\xA4 \xE2\x89\xA5 \xE2\x88\x9E \xCF\x80");
-    ImGui::TextUnformatted(u8"Same text, UTF-8 literal: Ω µ Γ ± ° ≤ ≥ ∞ π");
+    chart_.draw(buildScene(), chartOptions_);
     ImGui::End();
 }
 
@@ -77,6 +86,10 @@ void App::drawMenuBar() {
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("View")) {
+        ImGui::MenuItem("Admittance grid", nullptr, &chartOptions_.admittanceGrid);
+        ImGui::MenuItem("VSWR circle", nullptr, &chartOptions_.vswrCircle);
+        ImGui::MenuItem("Sweep locus on chart", nullptr, &chartOptions_.sweepLocus);
+        ImGui::MenuItem("Learn mode", nullptr, &chartOptions_.learnMode);
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("Help")) {

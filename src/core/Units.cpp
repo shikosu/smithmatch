@@ -128,6 +128,14 @@ std::string formatSig(double value, int sigDigits) {
     return (value < 0.0 ? "-" : "") + body;
 }
 
+std::string formatComplex(Complex value, int sigDigits) {
+    const std::string re = formatSig(value.real(), sigDigits);
+    // Le signe de la partie imaginaire devient l'opérateur (− est le vrai signe moins, U+2212).
+    const bool negative = std::signbit(value.imag()) && value.imag() != 0.0;
+    const std::string im = formatSig(std::fabs(value.imag()), sigDigits);
+    return re + (negative ? " \xE2\x88\x92 j" : " + j") + im;
+}
+
 std::string formatEng(double value, const std::string& unit, int sigDigits) {
     const std::string suffix = unit.empty() ? std::string() : (" " + unit);
     if (std::isnan(value)) {

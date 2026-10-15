@@ -5,6 +5,8 @@
 
 #include <string>
 
+#include "core/Project.hpp"
+#include "ui/SmithChartView.hpp"
 #include "ui/Theme.hpp"
 
 struct GLFWwindow;
@@ -24,9 +26,14 @@ public:
 private:
     void drawFrame();     // construit toute l'interface d'une image
     void drawMenuBar();   // menus File / View / Help
+    ChartScene buildScene() const;   // prépare ce que l'abaque doit dessiner
 
     GLFWwindow* window_;
     Fonts fonts_;
+
+    Project project_;             // l'état du document
+    SmithChartView chart_;
+    ChartOptions chartOptions_;
 };
 
 } // namespace smith::ui

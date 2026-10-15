@@ -12,6 +12,8 @@
 #include <optional>
 #include <string>
 
+#include "core/Types.hpp"
+
 namespace smith {
 
 // Formate une valeur avec le préfixe SI qui donne un nombre entre 1 et 999,
@@ -23,6 +25,10 @@ std::string formatEng(double value, const std::string& unit, int sigDigits = 4);
 // Formate un nombre avec « sigDigits » chiffres significatifs, sans préfixe ni unité
 // (zéros inutiles supprimés). Exemple : (1.23456, 4) → "1.235".
 std::string formatSig(double value, int sigDigits = 4);
+
+// Formate un nombre complexe « a + jb » (ou « a − jb ») avec « sigDigits » chiffres
+// significatifs par partie. Exemple : (25, −15) → "25 − j15". Pas d'unité ajoutée.
+std::string formatComplex(Complex value, int sigDigits = 4);
 
 // Lit un nombre saisi par l'utilisateur. Accepte :
 //   "4.7n", "4.7 nH", "4.7nH", "100p", "2.2u", "2.2µ", "1.5k", "2.4G", "2.4 GHz", "50",
