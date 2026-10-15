@@ -113,7 +113,8 @@ ChartScene App::buildScene() const {
         }
         scene.sweepF0Index = sweepIdeal_.f0Index;
     }
-    scene.highlightedElement = networkPanel_.hoveredElement();
+    scene.highlightedElement =
+        networkPanel_.hoveredElement() >= 0 ? networkPanel_.hoveredElement() : schematicView_.hoveredElement();
     return scene;
 }
 
@@ -227,9 +228,9 @@ void App::drawFrame() {
     ImGui::SetCursorScreenPos(ImVec2(origin.x + sweepW, bottomY));
     splitter("##split_sweep", true, bottomH, sweepWidth_, kMinSweepWidth, 1600.0f, false);
     ImGui::SetCursorScreenPos(ImVec2(origin.x + sweepW + split, bottomY));
-    ImGui::BeginChild("schematic", ImVec2(avail.x - sweepW - split, bottomH), ImGuiChildFlags_Borders);
-    panelHeader("SCHEMATIC");
-    ImGui::TextColored(kColorTextDim, "Coming in a later step.");
+    ImGui::BeginChild("schematic", ImVec2(avail.x - sweepW - split, bottomH), ImGuiChildFlags_Borders,
+                      ImGuiWindowFlags_HorizontalScrollbar);
+    schematicView_.draw(project_);
     ImGui::EndChild();
     ImGui::PopStyleVar();
 

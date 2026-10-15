@@ -22,6 +22,16 @@ Fonts g_fonts;   // polices chargées (une seule fois, au démarrage)
 
 const Fonts& currentFonts() { return g_fonts; }
 
+const ImVec4& colorForElementType(ElementType type) {
+    switch (type) {
+        case ElementType::SeriesInductor: return kColorSeriesL;
+        case ElementType::SeriesCapacitor: return kColorSeriesC;
+        case ElementType::ShuntInductor: return kColorShuntL;
+        case ElementType::ShuntCapacitor: return kColorShuntC;
+    }
+    return kColorText;
+}
+
 // -----------------------------------------------------------------------------
 // applyDarkTheme : part du thème sombre d'ImGui, puis ajuste couleurs,
 // arrondis et espacements pour un rendu sobre et aéré.

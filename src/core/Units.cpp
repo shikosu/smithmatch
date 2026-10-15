@@ -21,6 +21,7 @@ constexpr const char* kOmegaSign = "\xCE\xA9";    // Ω (U+03A9)
 constexpr const char* kOhmSign   = "\xE2\x84\xA6";// Ω (U+2126, symbole ohm)
 
 // Préfixes utilisés à l'AFFICHAGE, du plus petit au plus grand.
+constexpr double kScientificBelow = 1.0e-4;   // en dessous : notation scientifique (formatSig)
 constexpr int kMinPrefixExp = -15;
 constexpr int kMaxPrefixExp = 12;
 const char* displayPrefix(int exponent) {
@@ -55,6 +56,23 @@ std::string stripTrailingZeros(std::string text) {
 
 // Écrit |value| avec « sigDigits » chiffres significatifs (sans signe).
 std::string formatPositive(double magnitude, int sigDigits) {
+    // Très petite valeur (ex. 2.5e-16, bruit d'arrondi) : notation scientifique, sinon on
+    // afficherait des dizaines de zéros qui débordent des cadres.
+    if (magnitude < kScientificBelow) {
+        char sci[64];
+        std::snprintf(sci, sizeof sci, "%.*e", sigDigits > 1 ? sigDigits - 1 : 0, magnitude);
+        // « 2.50e-16 » → « 2.5e-16 » : on retire les zéros inutiles de la mantisse.
+        const std::string text(sci);
+        const std::size_t e = text.find('e');
+        const std::string mantissa = stripTrailingZeros(text.substr(0, e));
+        std::string exponent = text.substr(e + 1);                  // « -16 » ou « +05 »
+        const bool negativeExp = !exponent.empty() && exponent[0] == '-';
+        exponent.erase(0, 1);
+        while (exponent.size() > 1 && exponent[0] == '0') {
+            exponent.erase(0, 1);
+        }
+        return mantissa + "e" + (negativeExp ? "-" : "") + exponent;
+    }
     // Nombre de chiffres avant la virgule = floor(log10(x)) + 1.
     // Décimales à afficher = chiffres significatifs − chiffres avant la virgule.
     const int digitsBefore = static_cast<int>(std::floor(std::log10(magnitude))) + 1;
@@ -129,10 +147,20 @@ std::string formatSig(double value, int sigDigits) {
 }
 
 std::string formatComplex(Complex value, int sigDigits) {
-    const std::string re = formatSig(value.real(), sigDigits);
+    // Bruit d'arrondi : une partie négligeable devant l'autre (rapport < 1e-9) est affichée 0,
+    // pour écrire « 50 + j0 » et non « 50 + j2.8e-14 ».
+    double realPart = value.real();
+    double imagPart = value.imag();
+    if (std::fabs(imagPart) < kZeroRelTolerance * std::fabs(realPart)) {
+        imagPart = 0.0;
+    }
+    if (std::fabs(realPart) < kZeroRelTolerance * std::fabs(imagPart)) {
+        realPart = 0.0;
+    }
+    const std::string re = formatSig(realPart, sigDigits);
     // Le signe de la partie imaginaire devient l'opérateur (− est le vrai signe moins, U+2212).
-    const bool negative = std::signbit(value.imag()) && value.imag() != 0.0;
-    const std::string im = formatSig(std::fabs(value.imag()), sigDigits);
+    const bool negative = std::signbit(imagPart) && imagPart != 0.0;
+    const std::string im = formatSig(std::fabs(imagPart), sigDigits);
     return re + (negative ? " \xE2\x88\x92 j" : " + j") + im;
 }
 

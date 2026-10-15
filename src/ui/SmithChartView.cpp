@@ -188,16 +188,6 @@ void drawArrowHead(const Frame& f, ImVec2 tip, ImVec2 from, const ImVec4& color)
     f.drawList->AddTriangleFilled(tip, left, right, toU32(color));
 }
 
-const ImVec4& colorForType(ElementType type) {
-    switch (type) {
-        case ElementType::SeriesInductor: return kColorSeriesL;
-        case ElementType::SeriesCapacitor: return kColorSeriesC;
-        case ElementType::ShuntInductor: return kColorShuntL;
-        case ElementType::ShuntCapacitor: return kColorShuntC;
-    }
-    return kColorText;
-}
-
 // Dessine un réseau complet (un arc par élément). « dashed » = aperçu du solveur.
 void drawNetworkPaths(const Frame& f, const ChartScene& scene, const ElementList& network, bool dashed,
                       std::vector<ImVec2>& scratch) {
@@ -207,7 +197,7 @@ void drawNetworkPaths(const Frame& f, const ChartScene& scene, const ElementList
         if (scratch.size() < 2) {
             continue;
         }
-        const ImVec4& color = dashed ? kColorPreview : colorForType(network[i].type);
+        const ImVec4& color = dashed ? kColorPreview : colorForElementType(network[i].type);
         const bool highlighted = !dashed && static_cast<int>(i) == scene.highlightedElement;
         const float thickness = (highlighted ? kPathThickness * 1.8f : kPathThickness) * f.ui;
         if (dashed) {

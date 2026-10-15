@@ -107,6 +107,7 @@ if(SMITH_BUILD_APP)
         src/ui/NetworkPanel.cpp
         src/ui/AutoMatchPanel.cpp
         src/ui/SweepPanel.cpp
+        src/ui/SchematicView.cpp
         src/ui/SmithChartView.cpp)
 
     # Polices intégrées dans l'exécutable (voir cmake/EmbedResource.cmake).

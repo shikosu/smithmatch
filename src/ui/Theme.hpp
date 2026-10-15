@@ -12,6 +12,8 @@
 
 #include <imgui.h>
 
+#include "core/Element.hpp"
+
 namespace smith::ui {
 
 // -----------------------------------------------------------------------------
@@ -93,6 +95,9 @@ inline constexpr ImVec4 kColorSchematicLabel = hexColor(0xE6E8EB);
 inline constexpr float kBaseFontSize  = 15.0f;
 inline constexpr float kSmallFontSize = 13.0f;
 inline constexpr float kTitleFontSize = 16.0f;
+
+// Couleur associée à un type d'élément (même couleur partout : abaque, liste, schéma).
+const ImVec4& colorForElementType(ElementType type);
 
 // Les polices chargées (une graisse normale, une demi-grasse pour les titres).
 struct Fonts {

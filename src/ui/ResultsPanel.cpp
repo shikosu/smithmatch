@@ -82,8 +82,12 @@ void drawResultsPanel(const Project& p, bool learnMode) {
     row("Zin", learn::Quantity::ZIn, true, zText(ideal), zText(rounded));
     row("zin = Zin/Z0", learn::Quantity::ZIn, true, znText(ideal), znText(rounded));
     row("|\xCE\x93m|", learn::Quantity::GammaM, true, formatSig(ideal.gammaMag, 4), formatSig(rounded.gammaMag, 4));
-    row("arg \xCE\x93m", learn::Quantity::GammaM, true, formatSig(ideal.gammaAngleDeg, 4) + "\xC2\xB0",
-        formatSig(rounded.gammaAngleDeg, 4) + "\xC2\xB0");
+    // L'angle n'a pas de sens quand |\xCE\x93m| n'est que du bruit d'arrondi : on affiche un tiret.
+    const auto angleText = [](const MatchMetrics& m) {
+        return m.gammaMag < kZeroRelTolerance ? std::string("\xE2\x80\x94")
+                                              : formatSig(m.gammaAngleDeg, 4) + "\xC2\xB0";
+    };
+    row("arg \xCE\x93m", learn::Quantity::GammaM, true, angleText(ideal), angleText(rounded));
     row("VSWR", learn::Quantity::Vswr, true, vswrText(ideal.vswr), vswrText(rounded.vswr));
     row("Return loss", learn::Quantity::ReturnLoss, true, dbText(ideal.returnLossDb), dbText(rounded.returnLossDb));
     row("|S11|", learn::Quantity::S11, true, dbText(ideal.s11Db), dbText(rounded.s11Db));

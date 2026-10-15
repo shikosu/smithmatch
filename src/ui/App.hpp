@@ -10,6 +10,7 @@
 #include "ui/NetworkPanel.hpp"
 #include "ui/SetupPanel.hpp"
 #include "core/Sweep.hpp"
+#include "ui/SchematicView.hpp"
 #include "ui/SmithChartView.hpp"
 #include "ui/SweepPanel.hpp"
 #include "ui/Theme.hpp"
@@ -51,6 +52,7 @@ private:
     NetworkPanel networkPanel_;
     AutoMatchPanel autoMatchPanel_;
     SweepPanel sweepPanel_;
+    SchematicView schematicView_;
 
     // Balayages recalculés à chaque image (quelques centaines de points : instantané).
     SweepResult sweepIdeal_;       // réseau courant, valeurs idéales

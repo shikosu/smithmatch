@@ -22,16 +22,6 @@ constexpr double kSliderMaxInductance = 1.0e-3;
 constexpr double kSliderMinCapacitance = 1.0e-15;
 constexpr double kSliderMaxCapacitance = 1.0e-6;
 
-const ImVec4& colorForType(ElementType type) {
-    switch (type) {
-        case ElementType::SeriesInductor: return kColorSeriesL;
-        case ElementType::SeriesCapacitor: return kColorSeriesC;
-        case ElementType::ShuntInductor: return kColorShuntL;
-        case ElementType::ShuntCapacitor: return kColorShuntC;
-    }
-    return kColorText;
-}
-
 // Valeur initiale « sensée » d'un nouvel élément : sa réactance (ou |1/susceptance|)
 // vaut Z0 à f0. L = Z0/ω ; C = 1/(ω·Z0).
 Element newElement(ElementType type, double z0, double f0Hz) {
@@ -56,7 +46,7 @@ bool NetworkPanel::draw(Project& p, bool learnMode) {
     const float spacing = ImGui::GetStyle().ItemSpacing.x;
     const float buttonWidth = (ImGui::GetContentRegionAvail().x - spacing) * 0.5f;
     for (int i = 0; i < 4; ++i) {
-        ImGui::PushStyleColor(ImGuiCol_Text, colorForType(buttons[i].type));
+        ImGui::PushStyleColor(ImGuiCol_Text, colorForElementType(buttons[i].type));
         if (ImGui::Button(buttons[i].label, ImVec2(buttonWidth, 0.0f))) {
             p.network.push_back(newElement(buttons[i].type, p.z0, p.f0Hz));
             changed = true;
@@ -119,7 +109,7 @@ bool NetworkPanel::draw(Project& p, bool learnMode) {
         ImGui::TextColored(kColorTextDim, "%zu", i + 1);
         ImGui::SameLine();
         ImGui::PushFont(currentFonts().semibold, kBaseFontSize);
-        ImGui::TextColored(colorForType(element.type), "%s", typeName(element.type));
+        ImGui::TextColored(colorForElementType(element.type), "%s", typeName(element.type));
         ImGui::PopFont();
         ImGui::SameLine(rowStartX + rowWidth - buttonsWidth);
         ImGui::BeginDisabled(i == 0);
@@ -175,7 +165,7 @@ bool NetworkPanel::draw(Project& p, bool learnMode) {
         // Ligne 4 (mode Learn) : ce que fait l'élément sur l'abaque.
         if (learnMode) {
             ImGui::PushTextWrapPos(0.0f);
-            ImGui::TextColored(withAlpha(colorForType(element.type), 0.9f), "%s",
+            ImGui::TextColored(withAlpha(colorForElementType(element.type), 0.9f), "%s",
                                learn::explainElement(element, p.f0Hz, p.z0, nodes[i]).c_str());
             ImGui::PopTextWrapPos();
         }

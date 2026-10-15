@@ -21,16 +21,6 @@ namespace {
 constexpr const char* kArrow = "\xE2\x86\x92";   // →
 constexpr double kQStep = 1.0;                   // « Q_min + 1 » du bouton d'aide
 
-const ImVec4& colorForType(ElementType type) {
-    switch (type) {
-        case ElementType::SeriesInductor: return kColorSeriesL;
-        case ElementType::SeriesCapacitor: return kColorSeriesC;
-        case ElementType::ShuntInductor: return kColorShuntL;
-        case ElementType::ShuntCapacitor: return kColorShuntC;
-    }
-    return kColorText;
-}
-
 const ImVec4& qualityColor(double vswr) {
     if (vswr <= kVswrGoodLimit) {
         return kColorGood;
@@ -50,7 +40,7 @@ void drawElementLine(const ElementList& elements) {
         }
         const std::string text = std::string(typeName(elements[i].type)) + " " +
                                  formatEng(elements[i].value, valueUnit(elements[i].type));
-        ImGui::TextColored(colorForType(elements[i].type), "%s", text.c_str());
+        ImGui::TextColored(colorForElementType(elements[i].type), "%s", text.c_str());
     }
 }
 

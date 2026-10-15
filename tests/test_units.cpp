@@ -128,3 +128,16 @@ TEST_CASE("formatComplex") {
     CHECK(smith::formatComplex(smith::Complex(0.5, 0.3), 3) == "0.5 + j0.3");
     CHECK(smith::formatComplex(smith::Complex(-5.0, 12.5), 3) == "-5 + j12.5");
 }
+
+TEST_CASE("formatSig uses scientific notation for rounding noise") {
+    CHECK(formatSig(2.5e-16, 3) == "2.5e-16");
+    CHECK(formatSig(-1.0e-10, 4) == "-1e-10");
+    CHECK(formatSig(0.001234, 3) == "0.00123");   // pas de notation scientifique au-dessus de 1e-4
+}
+
+TEST_CASE("formatComplex hides a negligible imaginary or real part") {
+    CHECK(smith::formatComplex(smith::Complex(50.0, 2.8e-14)) == "50 + j0");
+    CHECK(smith::formatComplex(smith::Complex(50.0, -2.8e-14)) == "50 + j0");
+    CHECK(smith::formatComplex(smith::Complex(3e-15, 25.0)) == "0 + j25");
+    CHECK(smith::formatComplex(smith::Complex(25.0, -15.0)) == "25 \xE2\x88\x92 j15");
+}
