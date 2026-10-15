@@ -1,5 +1,5 @@
 // =============================================================================
-// AutoMatchPanel.hpp — Panneau AUTO-MATCH (solveur automatique L / Pi / T)
+// SolverPanel.hpp — Panneau AUTO-MATCH (solveur automatique L / Pi / T)
 // =============================================================================
 // Rôle : choisir la topologie (L, Pi ou T), régler le Q nominal pour Pi/T, lister
 // les solutions du solveur (core/Solver) avec leur qualité d'adaptation, aperçu
@@ -14,7 +14,7 @@
 
 namespace smith::ui {
 
-class AutoMatchPanel {
+class SolverPanel {
 public:
     // Dessine le panneau. Renvoie true si le projet a été modifié (solution appliquée).
     bool draw(Project& project, bool learnMode);

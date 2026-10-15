@@ -100,13 +100,13 @@ struct Project {
 | `SetupPanel` | Z0, f0, source, charge + modèle, série E |
 | `ResultsPanel` | Zin, Γ, VSWR, RL, S11, pertes, qualité (valeurs idéales et E-series) |
 | `NetworkPanel` | mode manuel : ajouter / éditer / réordonner / supprimer les éléments |
-| `AutoMatchPanel` | mode automatique : topologie L/Pi/T, Q, liste de solutions, Apply |
+| `SolverPanel` | mode automatique : topologie L/Pi/T, Q, liste de solutions, Apply |
 | `SmithChartView` | dessin de l'abaque (grilles, trajets colorés, repères, lieu, survol) |
 | `SweepPanel` | réglages du balayage + courbes ImPlot (|S11|, VSWR, bande passante) |
 | `SchematicView` | schéma électrique (source à gauche, charge à droite) |
 | `LearnText`, `HelpWindows` | textes pédagogiques et fenêtres d'aide, regroupés au même endroit |
 | `platform/FileDialogs` | boîtes « Ouvrir / Enregistrer » natives (nativefiledialog-extended) |
-| `platform/ScreenCapture` | capture OpenGL → PNG (`glReadPixels` + stb_image_write) |
+| `platform/ImageExport` | capture OpenGL → PNG (`glReadPixels` + stb_image_write) |
 
 ### Principe « immediate mode » d'ImGui
 
@@ -128,7 +128,7 @@ Conséquence très pratique : quand l'utilisateur modifie une valeur, **tout est
    ▼                  ▼                                     ▼
 SetupPanel       SmithChartView                        SweepPanel
 NetworkPanel     (ChartScene = projet + aperçu         SchematicView
-AutoMatchPanel    solveur + lieu du balayage)          ResultsPanel
+SolverPanel    solveur + lieu du balayage)          ResultsPanel
    │ modifient le Project (renvoient true si changé)
    ▼
  project_  ──►  modified_ = true  ──►  titre « * », boîte « Unsaved changes »
@@ -143,7 +143,7 @@ AutoMatchPanel    solveur + lieu du balayage)          ResultsPanel
 Que se passe-t-il quand on clique « Apply » sur une solution du solveur ?
 
 1. `solveL(zSource, zLoad, f0)` (dans `Solver.cpp`) calcule les solutions en formules fermées. Chacune est une `ElementList` dans la convention du réseau (indice 0 côté charge).
-2. `AutoMatchPanel` copie la liste choisie dans `project.network` (après confirmation si le réseau n'était pas vide).
+2. `SolverPanel` copie la liste choisie dans `project.network` (après confirmation si le réseau n'était pas vide).
 3. À l'image suivante, `inputImpedance(network, zLoad, f0)` (dans `Network.cpp`) refait le calcul **indépendamment du solveur** : on part de Z_L, on applique chaque élément (`Z + jX` pour un série, `1/(1/Z + jB)` pour un shunt).
 4. `evaluateMatch(zIn, zSource)` donne Γm, VSWR, RL… affichés dans RESULTS ; `sampledPath` fournit les arcs colorés de l'abaque.
 
@@ -153,7 +153,7 @@ Les tests utilisent exactement cette double vérification : les composants calcu
 
 - **Projet** : `toJson` / `fromJson` (`Project.cpp`), format `.smith.json` avec `"format"` et `"version"` (voir `docs/MATHS.md` pour les formules, `docs/USER_GUIDE.md` pour l'usage). Règle du projet : si le schéma change, on incrémente `kProjectFileVersion` **et** on garde la lecture des anciennes versions.
 - **Écriture sûre** : `writeTextFile` écrit dans `fichier.tmp` puis renomme ; un plantage ne détruit jamais l'ancien fichier.
-- **CSV** : `sweepToCsv` (core, testé). **PNG** : `ScreenCapture` capture le rectangle de l'abaque **après** le rendu de l'image et **avant** l'échange des tampons ; l'échelle du framebuffer (Retina) est prise en compte et l'image est retournée verticalement (OpenGL a son origine en bas).
+- **CSV** : `sweepToCsv` (core, testé). **PNG** : `ImageExport` capture le rectangle de l'abaque **après** le rendu de l'image et **avant** l'échange des tampons ; l'échelle du framebuffer (Retina) est prise en compte et l'image est retournée verticalement (OpenGL a son origine en bas).
 
 ## 8. Points d'extension prévus pour la v0.3 (non implémentés)
 

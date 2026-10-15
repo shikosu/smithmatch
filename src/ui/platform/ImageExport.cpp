@@ -1,7 +1,7 @@
 // =============================================================================
-// ScreenCapture.cpp — Capture OpenGL → PNG (glReadPixels + stb_image_write)
+// ImageExport.cpp — Capture OpenGL → PNG (glReadPixels + stb_image_write)
 // =============================================================================
-#include "ui/platform/ScreenCapture.hpp"
+#include "ui/platform/ImageExport.hpp"
 
 #include <GLFW/glfw3.h>
 

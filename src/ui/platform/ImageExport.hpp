@@ -1,5 +1,5 @@
 // =============================================================================
-// ScreenCapture.hpp — Capture d'une zone de la fenêtre OpenGL en fichier PNG
+// ImageExport.hpp — Capture d'une zone de la fenêtre OpenGL en fichier PNG
 // =============================================================================
 // Rôle : exporter l'abaque tel qu'il est affiché. Appeler JUSTE APRÈS le rendu de l'image
 // et AVANT glfwSwapBuffers (le tampon arrière contient alors l'image complète).

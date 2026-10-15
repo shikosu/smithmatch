@@ -31,7 +31,7 @@
 #include "ui/HelpWindows.hpp"
 #include "ui/ResultsPanel.hpp"
 #include "ui/platform/FileDialogs.hpp"
-#include "ui/platform/ScreenCapture.hpp"
+#include "ui/platform/ImageExport.hpp"
 #include "ui/Widgets.hpp"
 
 namespace smith::ui {
@@ -126,7 +126,7 @@ ChartScene App::buildScene() const {
     scene.zLoad = project_.load.zAtF0;
     scene.f0Hz = project_.f0Hz;
     scene.network = project_.network;
-    scene.previewNetwork = autoMatchPanel_.previewNetwork();
+    scene.previewNetwork = solverPanel_.previewNetwork();
     if (chartOptions_.sweepLocus && sweepIdeal_.ok) {
         // Lieu de Z_in(f) : chaque point est Γ = (Z − Z0)/(Z + Z0), comme tout point de l'abaque.
         scene.sweepLocus.reserve(sweepIdeal_.points.size());
@@ -232,7 +232,7 @@ void App::drawFrame() {
     splitter("##split_net", false, rightW, networkHeight_, kMinPanelHeight, 900.0f, false);
     ImGui::SetCursorScreenPos(ImVec2(rightX, origin.y + networkH + split));
     ImGui::BeginChild("automatch", ImVec2(rightW, topH - networkH - split), ImGuiChildFlags_Borders);
-    if (autoMatchPanel_.draw(project_, chartOptions_.learnMode)) {
+    if (solverPanel_.draw(project_, chartOptions_.learnMode)) {
         modified_ = true;
     }
     ImGui::EndChild();

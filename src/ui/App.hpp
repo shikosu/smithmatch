@@ -6,7 +6,7 @@
 #include <string>
 
 #include "core/Project.hpp"
-#include "ui/AutoMatchPanel.hpp"
+#include "ui/SolverPanel.hpp"
 #include "ui/NetworkPanel.hpp"
 #include "ui/SetupPanel.hpp"
 #include "core/Sweep.hpp"
@@ -69,7 +69,7 @@ private:
     ChartOptions chartOptions_;
     SetupPanel setupPanel_;
     NetworkPanel networkPanel_;
-    AutoMatchPanel autoMatchPanel_;
+    SolverPanel solverPanel_;
     SweepPanel sweepPanel_;
     SchematicView schematicView_;
 

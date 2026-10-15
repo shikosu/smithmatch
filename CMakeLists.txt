@@ -106,12 +106,12 @@ if(SMITH_BUILD_APP)
         src/ui/SetupPanel.cpp
         src/ui/ResultsPanel.cpp
         src/ui/NetworkPanel.cpp
-        src/ui/AutoMatchPanel.cpp
+        src/ui/SolverPanel.cpp
         src/ui/SweepPanel.cpp
         src/ui/SchematicView.cpp
         src/ui/HelpWindows.cpp
         src/ui/platform/FileDialogs.cpp
-        src/ui/platform/ScreenCapture.cpp
+        src/ui/platform/ImageExport.cpp
         src/ui/SmithChartView.cpp)
 
     # Polices intégrées dans l'exécutable (voir cmake/EmbedResource.cmake).

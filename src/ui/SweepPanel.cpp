@@ -226,7 +226,7 @@ bool SweepPanel::draw(Project& p, const SweepResult& ideal, const SweepResult* r
                          lineSpec(kColorPlotVswr, kLineWeight));
         const double threshold = p.sweep.vswrThreshold;
         ImPlot::PlotInfLines("VSWR limit", &threshold, 1,
-                             lineSpec(kColorPlotThreshold, kThresholdLineWeight, ImPlotInfLinesFlags_Horizontal | ImPlotItemFlags_NoLegend));
+                             lineSpec(kColorPlotThreshold, kThresholdLineWeight, static_cast<int>(ImPlotInfLinesFlags_Horizontal) | static_cast<int>(ImPlotItemFlags_NoLegend)));
         ImPlot::EndPlot();
     }
     ImPlot::PopStyleColor(8);

@@ -1,7 +1,7 @@
 // =============================================================================
-// AutoMatchPanel.cpp — Implémentation du panneau AUTO-MATCH
+// SolverPanel.cpp — Implémentation du panneau AUTO-MATCH
 // =============================================================================
-#include "ui/AutoMatchPanel.hpp"
+#include "ui/SolverPanel.hpp"
 
 #include <cmath>
 #include <string>
@@ -46,7 +46,7 @@ void drawElementLine(const ElementList& elements) {
 
 } // namespace
 
-bool AutoMatchPanel::draw(Project& p, bool learnMode) {
+bool SolverPanel::draw(Project& p, bool learnMode) {
     bool changed = false;
     preview_.clear();
     panelHeader("AUTO-MATCH (solver)");
