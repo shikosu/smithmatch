@@ -9,7 +9,9 @@
 #include "ui/AutoMatchPanel.hpp"
 #include "ui/NetworkPanel.hpp"
 #include "ui/SetupPanel.hpp"
+#include "core/Sweep.hpp"
 #include "ui/SmithChartView.hpp"
+#include "ui/SweepPanel.hpp"
 #include "ui/Theme.hpp"
 
 struct GLFWwindow;
@@ -48,6 +50,12 @@ private:
     SetupPanel setupPanel_;
     NetworkPanel networkPanel_;
     AutoMatchPanel autoMatchPanel_;
+    SweepPanel sweepPanel_;
+
+    // Balayages recalculés à chaque image (quelques centaines de points : instantané).
+    SweepResult sweepIdeal_;       // réseau courant, valeurs idéales
+    SweepResult sweepRounded_;     // réseau arrondi à la série E
+    bool hasRounded_ = false;      // une série E est choisie
 
     // --- Mise en page (en points, avant mise à l'échelle HiDPI) ------------------------
     float leftWidth_ = 350.0f;

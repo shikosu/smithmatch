@@ -9,6 +9,7 @@
 #include "core/ESeries.hpp"
 #include "core/RfMath.hpp"
 #include "core/Solver.hpp"
+#include "core/Sweep.hpp"
 #include "core/Units.hpp"
 #include "ui/LearnText.hpp"
 #include "ui/Theme.hpp"
@@ -173,6 +174,16 @@ bool AutoMatchPanel::draw(Project& p, bool learnMode) {
             ImGui::TextColored(qualityColor(rounded.vswr), "%s", line.c_str());
         } else {
             ImGui::TextColored(qualityColor(ideal.vswr), "%s", line.c_str());
+        }
+        // Bande passante (VSWR ≤ seuil du balayage) de la solution, idéale puis arrondie.
+        {
+            std::string bwLine = "Bandwidth: " + formatBandwidth(bandwidth(runSweep(p, s.elements), p.sweep.vswrThreshold));
+            if (p.eSeries != ESeriesKind::None) {
+                const ElementList snapped = snapNetwork(s.elements, p.eSeries);
+                bwLine += std::string("   |   ") + eSeriesName(p.eSeries) + ": " +
+                          formatBandwidth(bandwidth(runSweep(p, snapped), p.sweep.vswrThreshold));
+            }
+            ImGui::TextColored(kColorTextDim, "%s", bwLine.c_str());
         }
         if (usesQ) {
             ImGui::TextColored(kColorTextDim, "Nominal Q = %s", formatSig(s.nominalQ, 3).c_str());

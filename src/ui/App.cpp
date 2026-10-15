@@ -21,6 +21,8 @@
 
 #include <algorithm>
 
+#include "core/ESeries.hpp"
+#include "core/RfMath.hpp"
 #include "core/Types.hpp"
 #include "ui/ResultsPanel.hpp"
 #include "ui/Widgets.hpp"
@@ -103,6 +105,14 @@ ChartScene App::buildScene() const {
     scene.f0Hz = project_.f0Hz;
     scene.network = project_.network;
     scene.previewNetwork = autoMatchPanel_.previewNetwork();
+    if (chartOptions_.sweepLocus && sweepIdeal_.ok) {
+        // Lieu de Z_in(f) : chaque point est Γ = (Z − Z0)/(Z + Z0), comme tout point de l'abaque.
+        scene.sweepLocus.reserve(sweepIdeal_.points.size());
+        for (const SweepPoint& point : sweepIdeal_.points) {
+            scene.sweepLocus.push_back(gammaFromZ(point.zIn, project_.z0));
+        }
+        scene.sweepF0Index = sweepIdeal_.f0Index;
+    }
     scene.highlightedElement = networkPanel_.hoveredElement();
     return scene;
 }
@@ -123,6 +133,14 @@ void App::drawFrame() {
     ImGui::Begin("##host", nullptr, hostFlags);
     ImGui::PopStyleVar();
     drawMenuBar();
+
+    // Balayages du réseau courant (idéal, et arrondi à la série E si choisie) : utilisés par
+    // l'abaque (lieu), le panneau SWEEP et la bande passante.
+    sweepIdeal_ = runSweep(project_, project_.network);
+    hasRounded_ = project_.eSeries != ESeriesKind::None;
+    if (hasRounded_) {
+        sweepRounded_ = runSweep(project_, snapNetwork(project_.network, project_.eSeries));
+    }
 
     const float s = uiScale();
     const ImVec2 origin = ImGui::GetCursorScreenPos();
@@ -202,8 +220,9 @@ void App::drawFrame() {
     const float sweepW = std::clamp(sweepWidth_ * s, kMinSweepWidth * s, maxSweep);
     ImGui::SetCursorScreenPos(ImVec2(origin.x, bottomY));
     ImGui::BeginChild("sweep", ImVec2(sweepW, bottomH), ImGuiChildFlags_Borders);
-    panelHeader("SWEEP");
-    ImGui::TextColored(kColorTextDim, "Coming in a later step.");
+    if (sweepPanel_.draw(project_, sweepIdeal_, hasRounded_ ? &sweepRounded_ : nullptr, chartOptions_.learnMode)) {
+        modified_ = true;
+    }
     ImGui::EndChild();
     ImGui::SetCursorScreenPos(ImVec2(origin.x + sweepW, bottomY));
     splitter("##split_sweep", true, bottomH, sweepWidth_, kMinSweepWidth, 1600.0f, false);

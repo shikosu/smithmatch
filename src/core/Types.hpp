@@ -66,6 +66,10 @@ inline constexpr double kVswrInfinityGammaMargin = 1.0e-12;
 inline constexpr double kReturnLossInfiniteGamma = 1.0e-15;
 
 // --- Qualité d'adaptation (indicateur vert / orange / rouge) ------------------
+// Balayage : plancher de |S11| (dB) utilisé pour le tracé (évite −∞ dans les courbes) et
+// écart relatif sous lequel une fréquence est confondue avec f₀.
+inline constexpr double kS11FloorDb = -100.0;
+inline constexpr double kSameFrequencyRelTolerance = 1.0e-9;
 inline constexpr double kVswrGoodLimit = 1.5;
 inline constexpr double kVswrOkLimit   = 2.0;
 
