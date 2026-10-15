@@ -1,13 +1,25 @@
 # Intégration continue : compile, teste et empaquette SmithMatch sur Windows et macOS.
+#   - à chaque push / pull request : compilation + tests + paquet (artefacts téléchargeables)
+#   - sur un tag « v* » (ex. v0.2.0) : création d'une GitHub Release avec le .zip et le .dmg
 name: build
 
 on:
   push:
+    branches: ["**"]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+env:
+  # Les dépendances FetchContent sont téléchargées dans ce dossier, qui est mis en cache.
+  DEPS_DIR: ${{ github.workspace }}/.deps
+
 jobs:
   build:
+    name: build (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -16,20 +28,72 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Cache des dépendances : la clé change si on modifie les versions épinglées.
+      - name: Cache FetchContent dependencies
+        uses: actions/cache@v4
+        with:
+          path: .deps
+          key: deps-${{ runner.os }}-${{ hashFiles('cmake/Dependencies.cmake') }}
+
       - name: Configure (Windows)
         if: runner.os == 'Windows'
-        run: cmake -S . -B build -DSMITH_WARNINGS_AS_ERRORS=ON
+        run: >
+          cmake -S . -B build
+          -DSMITH_WARNINGS_AS_ERRORS=ON
+          -DFETCHCONTENT_BASE_DIR="${{ env.DEPS_DIR }}"
 
-      - name: Configure (macOS, universal binary)
+      - name: Configure (macOS, universal binary arm64 + x86_64)
         if: runner.os == 'macOS'
         run: >
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
           -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
           -DSMITH_WARNINGS_AS_ERRORS=ON
+          -DFETCHCONTENT_BASE_DIR="${{ env.DEPS_DIR }}"
 
-      - name: Build
+      - name: Build (Release)
         run: cmake --build build --config Release --parallel
 
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
+
+      # CPack : .zip sur Windows, .dmg sur macOS (voir cmake/Packaging.cmake).
+      - name: Package
+        run: cmake --build build --config Release --target package
+
+      - name: Upload artifact (Windows .zip)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmithMatch-Windows
+          path: build/SmithMatch-*-Windows-x64.zip
+          if-no-files-found: error
+
+      - name: Upload artifact (macOS .dmg)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmithMatch-macOS
+          path: build/SmithMatch-*-macOS.dmg
+          if-no-files-found: error
+
+  # Publication : seulement quand on pousse un tag « v* ».
+  release:
+    name: GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the packages
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true

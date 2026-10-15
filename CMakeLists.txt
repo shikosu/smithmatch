@@ -169,3 +169,8 @@ if(SMITH_BUILD_TESTS)
     # Une seule entrée ctest qui exécute tous les cas de test doctest.
     add_test(NAME smith_tests COMMAND smith_tests)
 endif()
+
+# =============================================================================
+# Packaging (cible « package ») — voir cmake/Packaging.cmake
+# =============================================================================
+include(Packaging)
