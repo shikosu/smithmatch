@@ -1,0 +1,16 @@
+# Dossiers de compilation (ne jamais committer)
+build/
+build-*/
+out/
+cmake-build-*/
+
+# VS Code : on ne partage que extensions.json
+.vscode/*
+!.vscode/extensions.json
+
+# Fichiers personnels / temporaires
+*.user
+*.swp
+.DS_Store
+Thumbs.db
+*.smith.json.bak
