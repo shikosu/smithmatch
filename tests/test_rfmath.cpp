@@ -117,3 +117,24 @@ TEST_CASE("Screen mapping round trip") {
         CHECK(back.imag() == doctest::Approx(g.imag()).epsilon(1e-12));
     }
 }
+
+// --- evaluateMatch : toutes les grandeurs d'un coup ---------------------------------
+
+TEST_CASE("evaluateMatch for the default example (25 - j15 ohm on 50 ohm, no network)") {
+    const MatchMetrics m = evaluateMatch(Complex(25.0, -15.0), Complex(50.0, 0.0));
+    // Γ = (−25 − j15)/(75 − j15) ; |Γ| = √850/√5850 = 0.38118
+    CHECK(m.gammaMag == doctest::Approx(0.381181).epsilon(1e-5));
+    CHECK(m.gammaAngleDeg == doctest::Approx(-137.726).epsilon(1e-5));
+    CHECK(m.vswr == doctest::Approx(2.231964).epsilon(1e-6));
+    CHECK(m.returnLossDb == doctest::Approx(8.3770).epsilon(1e-4));
+    CHECK(m.s11Db == doctest::Approx(-8.3770).epsilon(1e-4));
+    CHECK(m.mismatchLossDb == doctest::Approx(0.68187).epsilon(1e-4));
+}
+
+TEST_CASE("evaluateMatch is perfect when Zin = conj(Zs)") {
+    const Complex zs(30.0, 20.0);
+    const MatchMetrics m = evaluateMatch(std::conj(zs), zs);
+    CHECK(m.gammaMag < 1e-15);
+    CHECK(m.vswr == doctest::Approx(1.0));
+    CHECK(m.returnLossDb == kInf);
+}

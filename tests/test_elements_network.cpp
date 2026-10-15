@@ -353,3 +353,35 @@ TEST_CASE("Validation of component values") {
     CHECK_FALSE(validateComponentValue(std::numeric_limits<double>::infinity()).ok);
     CHECK_FALSE(validateComponentValue(std::nan("")).ok);
 }
+
+// --- Projet par défaut ------------------------------------------------------------------
+
+#include "core/Project.hpp"
+
+TEST_CASE("defaultProject matches the documented starting example") {
+    const Project p = defaultProject();
+    CHECK(p.z0 == 50.0);
+    CHECK(p.f0Hz == 2.4e9);
+    CHECK(p.zSource == Complex(50.0, 0.0));
+    CHECK(p.load.zAtF0 == Complex(25.0, -15.0));
+    CHECK(p.load.model == LoadModel::SeriesEquivalent);
+    CHECK(p.network.empty());
+    CHECK(p.sweep.fMinHz == doctest::Approx(1.2e9));
+    CHECK(p.sweep.fMaxHz == doctest::Approx(4.8e9));
+    CHECK(p.sweep.points == 401);
+    CHECK(p.sweep.vswrThreshold == 2.0);
+    CHECK(p.eSeries == ESeriesKind::E12);
+}
+
+TEST_CASE("projectInputImpedanceAt follows the load model and the network") {
+    Project p = defaultProject();
+    p.network = {makeElement(ElementType::SeriesInductor, 2.6526e-9),
+                 makeElement(ElementType::ShuntCapacitor, 1.3263e-12)};
+    // À f₀ : le réseau du « cas 2 » de la spécification amène Zin sur 50 Ω.
+    const Complex zin = projectInputImpedanceAt(p, p.f0Hz);
+    CHECK(zin.real() == doctest::Approx(50.0).epsilon(1e-4));
+    CHECK(std::abs(zin.imag()) < 1e-2);
+    // À une autre fréquence, la charge « série équivalente » change : Zin n'est plus 50 Ω.
+    const Complex zOff = projectInputImpedanceAt(p, 1.2 * p.f0Hz);
+    CHECK(std::abs(zOff - Complex(50.0, 0.0)) > 1.0);
+}

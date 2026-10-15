@@ -16,6 +16,12 @@ extern const std::size_t   kInterSemiBoldTtfSize;
 
 namespace smith::ui {
 
+namespace {
+Fonts g_fonts;   // polices chargées (une seule fois, au démarrage)
+}
+
+const Fonts& currentFonts() { return g_fonts; }
+
 // -----------------------------------------------------------------------------
 // applyDarkTheme : part du thème sombre d'ImGui, puis ajuste couleurs,
 // arrondis et espacements pour un rendu sobre et aéré.
@@ -37,8 +43,8 @@ void applyDarkTheme(float scale) {
     style.FrameBorderSize   = 0.0f;
     style.PopupBorderSize   = 1.0f;
     style.WindowPadding     = ImVec2(10.0f, 10.0f);
-    style.FramePadding      = ImVec2(8.0f, 4.0f);
-    style.ItemSpacing       = ImVec2(8.0f, 6.0f);
+    style.FramePadding      = ImVec2(8.0f, 3.0f);
+    style.ItemSpacing       = ImVec2(8.0f, 5.0f);
     style.ItemInnerSpacing  = ImVec2(6.0f, 4.0f);
     style.CellPadding       = ImVec2(6.0f, 3.0f);
     style.ScrollbarSize     = 12.0f;
@@ -112,6 +118,7 @@ Fonts loadFonts() {
         regularData, static_cast<int>(assets::kInterRegularTtfSize), kBaseFontSize, &config);
     fonts.semibold = io.Fonts->AddFontFromMemoryTTF(
         semiboldData, static_cast<int>(assets::kInterSemiBoldTtfSize), kBaseFontSize, &config);
+    g_fonts = fonts;
     return fonts;
 }
 

@@ -46,6 +46,7 @@ TEST_CASE("parseEng handles other realistic inputs") {
     checkParse("1e-9", 1e-9);
     checkParse("-15", -15.0);
     checkParse("+3.3", 3.3);
+    checkParse("\xE2\x88\x92" "15", -15.0);   // vrai signe moins U+2212
     checkParse("  12  ", 12.0);
     checkParse("10 k\xCE\xA9", 1e4);         // 10 kΩ
     checkParse("50 \xCE\xA9", 50.0);         // 50 Ω (unité seule, pas de préfixe)

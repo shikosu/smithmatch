@@ -99,6 +99,10 @@ if(SMITH_BUILD_APP)
         src/ui/App.cpp
         src/ui/Theme.cpp
         src/ui/LearnText.cpp
+        src/ui/Widgets.cpp
+        src/ui/SetupPanel.cpp
+        src/ui/ResultsPanel.cpp
+        src/ui/NetworkPanel.cpp
         src/ui/SmithChartView.cpp)
 
     # Polices intégrées dans l'exécutable (voir cmake/EmbedResource.cmake).

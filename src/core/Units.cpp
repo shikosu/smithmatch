@@ -176,6 +176,11 @@ std::optional<double> parseEng(const std::string& rawText) {
             c = '.';
         }
     }
+    // Le vrai signe moins « − » (U+2212, 3 octets UTF-8) est remplacé par « - » ASCII.
+    constexpr const char* kMinusSign = "\xE2\x88\x92";
+    for (std::size_t at = text.find(kMinusSign); at != std::string::npos; at = text.find(kMinusSign, at + 1)) {
+        text.replace(at, 3, "-");
+    }
     if (text.empty()) {
         return std::nullopt;
     }

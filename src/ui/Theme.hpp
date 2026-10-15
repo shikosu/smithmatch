@@ -105,6 +105,10 @@ struct Fonts {
 void applyDarkTheme(float scale);
 
 // Charge les polices Inter intégrées à l'exécutable (aucun fichier externe).
+// Mémorise le résultat pour currentFonts().
 Fonts loadFonts();
+
+// Les polices chargées par loadFonts() (accessibles depuis toutes les vues).
+const Fonts& currentFonts();
 
 } // namespace smith::ui
