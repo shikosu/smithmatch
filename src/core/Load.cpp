@@ -52,4 +52,13 @@ Complex loadImpedanceAt(const LoadSpec& load, double f0Hz, double fHz) {
     return load.zAtF0;
 }
 
+std::optional<LoadModel> loadModelFromJsonName(const std::string& name) {
+    for (const LoadModel model : {LoadModel::Constant, LoadModel::SeriesEquivalent, LoadModel::ParallelEquivalent}) {
+        if (name == loadModelJsonName(model)) {
+            return model;
+        }
+    }
+    return std::nullopt;
+}
+
 } // namespace smith

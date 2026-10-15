@@ -8,6 +8,9 @@
 // =============================================================================
 #pragma once
 
+#include <optional>
+#include <string>
+
 #include "core/Element.hpp"
 
 namespace smith {
@@ -16,6 +19,7 @@ enum class ESeriesKind { None, E12, E24 };
 
 const char* eSeriesName(ESeriesKind kind);        // "None", "E12", "E24"
 const char* eSeriesJsonName(ESeriesKind kind);    // "none", "E12", "E24"
+std::optional<ESeriesKind> eSeriesFromJsonName(const std::string& name);   // inverse ; nullopt si inconnu
 
 // Valeur normalisée la plus proche (même unité SI que « value »).
 // kind = None → renvoie « value » inchangée. value ≤ 0 ou non finie → inchangée.

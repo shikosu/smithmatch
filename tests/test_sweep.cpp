@@ -3,7 +3,11 @@
 // =============================================================================
 #include <doctest/doctest.h>
 
+#include <algorithm>
 #include <cmath>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "core/Load.hpp"
 #include "core/RfMath.hpp"
@@ -188,4 +192,30 @@ TEST_CASE("gammaFromVswr inverts the VSWR formula") {
     CHECK(gammaFromVswr(2.0) == doctest::Approx(1.0 / 3.0));
     CHECK(gammaFromVswr(1.0) == doctest::Approx(0.0));
     CHECK(vswr(gammaFromVswr(1.5)) == doctest::Approx(1.5));
+}
+
+TEST_CASE("CSV export: header, one line per point, values readable back") {
+    Project p = pozarProject();
+    p.network = pozarSolution1(p);
+    p.sweep.points = 11;
+    const SweepResult sweep = runSweep(p, p.network);
+    const std::string csv = sweepToCsv(sweep);
+    // Découpe en lignes.
+    std::vector<std::string> lines;
+    std::istringstream stream(csv);
+    for (std::string line; std::getline(stream, line);) {
+        lines.push_back(line);
+    }
+    REQUIRE(lines.size() == sweep.points.size() + 1);
+    CHECK(lines[0] == "f_hz,zin_re_ohm,zin_im_ohm,gamma_mag,gamma_deg,s11_db,vswr");
+    // Chaque ligne a 7 champs ; la première fréquence est 300 MHz.
+    for (std::size_t i = 1; i < lines.size(); ++i) {
+        CHECK(std::count(lines[i].begin(), lines[i].end(), ',') == 6);
+        CHECK(lines[i].find(';') == std::string::npos);
+    }
+    CHECK(std::stod(lines[1].substr(0, lines[1].find(','))) == doctest::Approx(300e6));
+    // Relecture : le dernier VSWR du fichier est celui du dernier point.
+    const std::string& last = lines.back();
+    const double vswrBack = std::stod(last.substr(last.rfind(',') + 1));
+    CHECK(vswrBack == doctest::Approx(sweep.points.back().vswr).epsilon(1e-9));
 }

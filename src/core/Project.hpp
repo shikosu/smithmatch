@@ -37,6 +37,29 @@ struct Project {
     ESeriesKind eSeries = ESeriesKind::E12;
 };
 
+// --- Fichier projet (.smith.json) ------------------------------------------------
+// Format : voir docs/ARCHITECTURE.md. Règles :
+//  - « format » doit valoir kProjectFormatName ;
+//  - « version » plus grande que kProjectFileVersion → refus avec un message clair ;
+//  - les champs inconnus sont ignorés (compatibilité avec des versions futures) ;
+//  - un champ connu absent prend sa valeur par défaut ; un champ présent mais invalide est refusé.
+// Quand le schéma change : incrémenter kProjectFileVersion ET garder la lecture des anciennes versions.
+inline constexpr const char* kProjectFormatName = "smithmatch-project";
+inline constexpr int kProjectFileVersion = 1;
+
+struct ProjectLoadResult {
+    bool ok = false;
+    std::string message;     // raison du refus si ok = false
+    Project project;         // valide seulement si ok = true
+};
+
+// Sérialise le projet en JSON lisible (indentation de 2 espaces).
+std::string toJson(const Project& project);
+
+// Lit un projet depuis du texte JSON. Ne lève jamais d'exception : toute erreur
+// (JSON mal formé, version trop récente, valeur invalide…) est renvoyée dans le résultat.
+ProjectLoadResult fromJson(const std::string& text);
+
 // Projet de démarrage : antenne 25 − j15 Ω, 50 Ω, 2.4 GHz, réseau vide,
 // balayage de f₀/2 à 2·f₀, série E12.
 Project defaultProject();

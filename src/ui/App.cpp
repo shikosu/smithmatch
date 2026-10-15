@@ -20,11 +20,18 @@
 #include <imgui_impl_opengl3.h>
 
 #include <algorithm>
+#include <cmath>
+#include <filesystem>
+#include <optional>
 
 #include "core/ESeries.hpp"
+#include "core/FileIo.hpp"
 #include "core/RfMath.hpp"
 #include "core/Types.hpp"
+#include "ui/HelpWindows.hpp"
 #include "ui/ResultsPanel.hpp"
+#include "ui/platform/FileDialogs.hpp"
+#include "ui/platform/ScreenCapture.hpp"
 #include "ui/Widgets.hpp"
 
 namespace smith::ui {
@@ -42,10 +49,20 @@ constexpr float kMinPanelHeight = 120.0f;
 constexpr float kMinSchematicWidth = 280.0f;
 constexpr float kMinSweepWidth = 320.0f;
 constexpr const char* kUntitled = "Untitled";
+constexpr const char* kProjectFilterName = "SmithMatch project";
+constexpr const char* kProjectExtensions = "json";
+constexpr const char* kProjectSuffix = ".smith.json";
+constexpr const char* kUnsavedPopupName = "Unsaved changes";
 } // namespace
 
-App::App(GLFWwindow* window, const Fonts& fonts, const std::string& /*initialFile*/)
+App::App(GLFWwindow* window, const Fonts& fonts, const std::string& initialFile)
     : window_(window), fonts_(fonts), project_(defaultProject()) {
+    // Le rappel de fermeture retrouve l'App grâce au « user pointer » de la fenêtre.
+    glfwSetWindowUserPointer(window_, this);
+    glfwSetWindowCloseCallback(window_, &App::onWindowCloseRequested);
+    if (!initialFile.empty()) {
+        loadFromPath(initialFile);
+    }
     updateWindowTitle();
 }
 
@@ -58,6 +75,10 @@ App::App(GLFWwindow* window, const Fonts& fonts, const std::string& /*initialFil
 void App::run() {
     while (!glfwWindowShouldClose(window_)) {
         glfwPollEvents();
+
+        // Une capture PNG demandée pendant l'image précédente se fait pendant cette image-ci
+        // (le menu et la boîte de dialogue ont alors disparu de l'écran).
+        pngCaptureNow_ = !pngRequestPath_.empty();
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -75,6 +96,7 @@ void App::run() {
         glClearColor(bg.x, bg.y, bg.z, bg.w);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        capturePngIfRequested();       // doit se faire AVANT l'échange des tampons
         glfwSwapBuffers(window_);
     }
 }
@@ -134,6 +156,7 @@ void App::drawFrame() {
     ImGui::Begin("##host", nullptr, hostFlags);
     ImGui::PopStyleVar();
     drawMenuBar();
+    handleShortcuts();
 
     // Balayages du réseau courant (idéal, et arrondi à la série E si choisie) : utilisés par
     // l'abaque (lieu), le panneau SWEEP et la bande passante.
@@ -186,7 +209,9 @@ void App::drawFrame() {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, kColorPanelBg);
     ImGui::BeginChild("chart", ImVec2(centerW, topH), 0,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-    chart_.draw(buildScene(), chartOptions_);
+    ChartOptions options = chartOptions_;
+    options.suppressHover = pngCaptureNow_;      // pas de croix de survol dans l'export
+    chart_.draw(buildScene(), options);
     ImGui::EndChild();
     ImGui::PopStyleColor();
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f * s, 8.0f * s));
@@ -239,6 +264,7 @@ void App::drawFrame() {
     drawStatusBar(avail.x);
 
     ImGui::End();
+    drawDialogs();
 }
 
 // Barre d'état : message à gauche (rouge si erreur), nom du fichier à droite, « * » si modifié.
@@ -265,9 +291,31 @@ void App::drawMenuBar() {
     if (!ImGui::BeginMenuBar()) {
         return;
     }
+    const std::string mod = platform::shortcutModifierName();
     if (ImGui::BeginMenu("File")) {
+        if (ImGui::MenuItem("New", (mod + "N").c_str())) {
+            requestAction(PendingAction::NewProject);
+        }
+        if (ImGui::MenuItem("Open...", (mod + "O").c_str())) {
+            requestAction(PendingAction::OpenFile);
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem("Save", (mod + "S").c_str())) {
+            saveProject();
+        }
+        if (ImGui::MenuItem("Save As...", (mod + "Shift+S").c_str())) {
+            saveProjectAs();
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem("Export Smith chart as PNG...")) {
+            exportPng();
+        }
+        if (ImGui::MenuItem("Export sweep as CSV...")) {
+            exportCsv();
+        }
+        ImGui::Separator();
         if (ImGui::MenuItem("Quit")) {
-            glfwSetWindowShouldClose(window_, GLFW_TRUE);
+            requestAction(PendingAction::Quit);
         }
         ImGui::EndMenu();
     }
@@ -279,9 +327,229 @@ void App::drawMenuBar() {
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("Help")) {
+        if (ImGui::MenuItem("Quick guide")) {
+            showQuickGuide_ = true;
+        }
+        if (ImGui::MenuItem("About SmithMatch")) {
+            showAbout_ = true;
+        }
         ImGui::EndMenu();
     }
     ImGui::EndMenuBar();
+}
+
+// -----------------------------------------------------------------------------
+// Raccourcis clavier : Ctrl (Cmd sur Mac) + N, O, S, Maj+S.
+// -----------------------------------------------------------------------------
+void App::handleShortcuts() {
+    if (ImGui::IsPopupOpen(kUnsavedPopupName)) {
+        return;     // pendant la confirmation, on ne lance pas d'autre action
+    }
+    if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_N)) {
+        requestAction(PendingAction::NewProject);
+    } else if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_O)) {
+        requestAction(PendingAction::OpenFile);
+    } else if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_S)) {
+        saveProjectAs();
+    } else if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_S)) {
+        saveProject();
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Fermeture de la fenêtre (croix, Alt+F4, Cmd+Q) : si le projet est modifié, on annule
+// la fermeture et on demande confirmation.
+// -----------------------------------------------------------------------------
+void App::onWindowCloseRequested(GLFWwindow* window) {
+    auto* app = static_cast<App*>(glfwGetWindowUserPointer(window));
+    if (app != nullptr && app->modified_) {
+        glfwSetWindowShouldClose(window, GLFW_FALSE);
+        app->requestAction(PendingAction::Quit);
+    }
+}
+
+// Si le projet est modifié, ouvre « Unsaved changes » ; sinon exécute directement l'action.
+void App::requestAction(PendingAction action) {
+    if (modified_) {
+        pendingAction_ = action;
+        openUnsavedPopup_ = true;
+    } else {
+        performAction(action);
+    }
+}
+
+void App::performAction(PendingAction action) {
+    switch (action) {
+        case PendingAction::None:
+            break;
+        case PendingAction::NewProject:
+            project_ = defaultProject();
+            modified_ = false;
+            fileName_.clear();
+            filePath_.clear();
+            setStatus("New project.", false);
+            break;
+        case PendingAction::OpenFile: {
+            const std::optional<std::string> path = platform::openFileDialog(kProjectFilterName, kProjectExtensions);
+            if (path.has_value()) {
+                loadFromPath(*path);
+            }
+            break;
+        }
+        case PendingAction::Quit:
+            glfwSetWindowShouldClose(window_, GLFW_TRUE);
+            break;
+    }
+}
+
+void App::setCurrentFile(const std::string& path) {
+    filePath_ = path;
+    fileName_ = std::filesystem::u8path(path).filename().u8string();
+}
+
+// Charge un projet. En cas d'erreur, le projet courant n'est PAS touché.
+void App::loadFromPath(const std::string& path) {
+    const TextFileResult file = readTextFile(path);
+    if (!file.ok) {
+        setStatus(file.message, true);
+        return;
+    }
+    const ProjectLoadResult loaded = fromJson(file.text);
+    if (!loaded.ok) {
+        setStatus(loaded.message, true);
+        return;
+    }
+    project_ = loaded.project;
+    modified_ = false;
+    setCurrentFile(path);
+    setStatus("Opened " + fileName_ + ".", false);
+}
+
+bool App::writeProjectTo(const std::string& path) {
+    const TextFileResult written = writeTextFile(path, toJson(project_));
+    if (!written.ok) {
+        setStatus(written.message, true);
+        return false;
+    }
+    setCurrentFile(path);
+    modified_ = false;
+    setStatus("Saved " + fileName_ + ".", false);
+    return true;
+}
+
+bool App::saveProject() {
+    if (filePath_.empty()) {
+        return saveProjectAs();
+    }
+    return writeProjectTo(filePath_);
+}
+
+bool App::saveProjectAs() {
+    const std::string suggestion = fileName_.empty() ? std::string("project") + kProjectSuffix : fileName_;
+    const std::optional<std::string> path =
+        platform::saveFileDialog(kProjectFilterName, kProjectExtensions, suggestion, kProjectSuffix);
+    if (!path.has_value()) {
+        return false;
+    }
+    return writeProjectTo(*path);
+}
+
+// Export CSV du balayage du réseau courant (valeurs idéales).
+void App::exportCsv() {
+    if (!sweepIdeal_.ok) {
+        setStatus("Cannot export the sweep: " + sweepIdeal_.message, true);
+        return;
+    }
+    const std::optional<std::string> path = platform::saveFileDialog("CSV file", "csv", "sweep.csv", ".csv");
+    if (!path.has_value()) {
+        return;
+    }
+    const TextFileResult written = writeTextFile(*path, sweepToCsv(sweepIdeal_));
+    if (!written.ok) {
+        setStatus(written.message, true);
+        return;
+    }
+    setStatus("Exported " + std::filesystem::u8path(*path).filename().u8string() + ".", false);
+}
+
+// Export PNG : on demande seulement le chemin ici ; la capture a lieu à l'image suivante.
+void App::exportPng() {
+    const std::optional<std::string> path = platform::saveFileDialog("PNG image", "png", "smith-chart.png", ".png");
+    if (path.has_value()) {
+        pngRequestPath_ = *path;
+    }
+}
+
+void App::capturePngIfRequested() {
+    if (!pngCaptureNow_) {
+        return;
+    }
+    const std::string path = pngRequestPath_;
+    pngRequestPath_.clear();
+    pngCaptureNow_ = false;
+
+    // Rectangle de l'abaque : points ImGui → pixels du framebuffer (×2 sur Retina).
+    int fbWidth = 0;
+    int fbHeight = 0;
+    glfwGetFramebufferSize(window_, &fbWidth, &fbHeight);
+    const ImVec2 scale = ImGui::GetIO().DisplayFramebufferScale;
+    const int x0 = std::clamp(static_cast<int>(std::lround(chart_.rectMin().x * scale.x)), 0, fbWidth);
+    const int y0 = std::clamp(static_cast<int>(std::lround(chart_.rectMin().y * scale.y)), 0, fbHeight);
+    const int x1 = std::clamp(static_cast<int>(std::lround(chart_.rectMax().x * scale.x)), 0, fbWidth);
+    const int y1 = std::clamp(static_cast<int>(std::lround(chart_.rectMax().y * scale.y)), 0, fbHeight);
+
+    const platform::CaptureResult result = platform::saveFramebufferRegionPng(path, x0, y0, x1 - x0, y1 - y0, fbHeight);
+    if (result.ok) {
+        setStatus("Exported " + std::filesystem::u8path(path).filename().u8string() + ".", false);
+    } else {
+        setStatus("PNG export failed: " + result.message, true);
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Dialogues : confirmation des modifications non enregistrées, aide, à propos.
+// -----------------------------------------------------------------------------
+void App::drawDialogs() {
+    if (openUnsavedPopup_) {
+        ImGui::OpenPopup(kUnsavedPopupName);
+        openUnsavedPopup_ = false;
+    }
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal(kUnsavedPopupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        const std::string name = fileName_.empty() ? std::string(kUntitled) : fileName_;
+        ImGui::Text("Save changes to \"%s\" before continuing?", name.c_str());
+        ImGui::Spacing();
+        const float w = 110.0f * uiScale();
+        if (ImGui::Button("Save", ImVec2(w, 0.0f))) {
+            ImGui::CloseCurrentPopup();
+            const PendingAction action = pendingAction_;
+            pendingAction_ = PendingAction::None;
+            if (saveProject()) {            // si l'enregistrement est annulé ou échoue, on ne fait rien
+                performAction(action);
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Discard", ImVec2(w, 0.0f))) {
+            ImGui::CloseCurrentPopup();
+            const PendingAction action = pendingAction_;
+            pendingAction_ = PendingAction::None;
+            modified_ = false;
+            performAction(action);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(w, 0.0f))) {
+            ImGui::CloseCurrentPopup();
+            pendingAction_ = PendingAction::None;
+        }
+        ImGui::EndPopup();
+    }
+    if (showQuickGuide_) {
+        drawQuickGuide(showQuickGuide_);
+    }
+    if (showAbout_) {
+        drawAbout(showAbout_);
+    }
 }
 
 } // namespace smith::ui

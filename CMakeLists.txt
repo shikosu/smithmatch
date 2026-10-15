@@ -84,7 +84,8 @@ add_library(smith_core STATIC
     src/core/Validation.cpp
     src/core/Project.cpp
     src/core/Solver.cpp
-    src/core/Sweep.cpp)
+    src/core/Sweep.cpp
+    src/core/FileIo.cpp)
 target_include_directories(smith_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 # Seule dépendance externe autorisée : nlohmann/json (bibliothèque d'en-têtes).
 target_link_libraries(smith_core PUBLIC nlohmann_json::nlohmann_json)
@@ -108,6 +109,9 @@ if(SMITH_BUILD_APP)
         src/ui/AutoMatchPanel.cpp
         src/ui/SweepPanel.cpp
         src/ui/SchematicView.cpp
+        src/ui/HelpWindows.cpp
+        src/ui/platform/FileDialogs.cpp
+        src/ui/platform/ScreenCapture.cpp
         src/ui/SmithChartView.cpp)
 
     # Polices intégrées dans l'exécutable (voir cmake/EmbedResource.cmake).
@@ -157,7 +161,9 @@ if(SMITH_BUILD_TESTS)
         tests/test_elements_network.cpp
         tests/test_eseries.cpp
         tests/test_solver.cpp
-        tests/test_sweep.cpp)
+        tests/test_sweep.cpp
+        tests/test_project.cpp
+        tests/test_fileio.cpp)
     target_link_libraries(smith_tests PRIVATE smith_core doctest::doctest)
     smith_enable_warnings(smith_tests)
     # Une seule entrée ctest qui exécute tous les cas de test doctest.

@@ -67,6 +67,12 @@ BandwidthResult bandwidth(const SweepResult& sweep, double vswrThreshold);
 // de la plage balayée, ou « none » s'il n'y a pas de bande.
 std::string formatBandwidth(const BandwidthResult& bw);
 
+// Export CSV du balayage (séparateur « , », point décimal, en-tête, une ligne par point) :
+//   f_hz,zin_re_ohm,zin_im_ohm,gamma_mag,gamma_deg,s11_db,vswr
+// Remarque : s11_db est limité par le bas à kS11FloorDb (adaptation parfaite) et vswr vaut « inf »
+// si |Γm| ≈ 1. Les nombres sont écrits avec 12 chiffres significatifs, quelle que soit la langue du système.
+std::string sweepToCsv(const SweepResult& sweep);
+
 // |Γ| correspondant à un VSWR donné : (S − 1)/(S + 1).
 double gammaFromVswr(double vswrValue);
 

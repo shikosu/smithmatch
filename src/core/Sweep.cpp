@@ -5,6 +5,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <locale>
+#include <sstream>
 
 #include "core/Network.hpp"
 #include "core/RfMath.hpp"
@@ -14,6 +16,8 @@
 namespace smith {
 
 namespace {
+
+constexpr int kCsvSignificantDigits = 12;
 
 // Évalue un point à la fréquence f.
 SweepPoint evaluatePoint(const Project& p, const ElementList& network, double fHz) {
@@ -171,6 +175,24 @@ std::string formatBandwidth(const BandwidthResult& bw) {
     const bool open = bw.lowOpen || bw.highOpen;
     return std::string(open ? "> " : "") + formatEng(bw.widthHz, "Hz", 3) + " (" +
            formatSig(bw.fractionalPercent, 3) + " %)";
+}
+
+std::string sweepToCsv(const SweepResult& sweep) {
+    std::ostringstream out;
+    out.imbue(std::locale::classic());      // point décimal garanti
+    out.precision(kCsvSignificantDigits);
+    out << "f_hz,zin_re_ohm,zin_im_ohm,gamma_mag,gamma_deg,s11_db,vswr\n";
+    for (const SweepPoint& p : sweep.points) {
+        out << p.fHz << ',' << p.zIn.real() << ',' << p.zIn.imag() << ',' << p.gammaMag << ',' << p.gammaAngleDeg << ','
+            << p.s11Db << ',';
+        if (std::isinf(p.vswr)) {
+            out << "inf";
+        } else {
+            out << p.vswr;
+        }
+        out << '\n';
+    }
+    return out.str();
 }
 
 } // namespace smith

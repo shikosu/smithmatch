@@ -7,6 +7,9 @@
 // =============================================================================
 #pragma once
 
+#include <optional>
+#include <string>
+
 #include "core/Types.hpp"
 
 namespace smith {
@@ -25,6 +28,7 @@ struct LoadSpec {
 
 const char* loadModelName(LoadModel model);       // "Constant", "Series equivalent", …
 const char* loadModelJsonName(LoadModel model);   // "constant", "series_equivalent", …
+std::optional<LoadModel> loadModelFromJsonName(const std::string& name);   // inverse ; nullopt si inconnu
 
 // Impédance de la charge à la fréquence fHz (f₀ = fréquence où zAtF0 est donnée).
 //   Constant    : Z_L(f) = Z_L

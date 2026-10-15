@@ -40,6 +40,7 @@ struct ChartOptions {
     bool vswrCircle = true;
     bool sweepLocus = false;
     bool learnMode = true;
+    bool suppressHover = false;   // pas de croix ni d'infobulle (utilisé pendant l'export PNG)
 };
 
 class SmithChartView {

@@ -84,4 +84,15 @@ ElementList snapNetwork(const ElementList& network, ESeriesKind kind) {
     return snapped;
 }
 
+std::optional<ESeriesKind> eSeriesFromJsonName(const std::string& name) {
+    // On teste chaque valeur de l'énumération : si on en ajoute une, le switch de eSeriesJsonName
+    // oblige à la traiter, et elle devient automatiquement lisible ici.
+    for (const ESeriesKind kind : {ESeriesKind::None, ESeriesKind::E12, ESeriesKind::E24}) {
+        if (name == eSeriesJsonName(kind)) {
+            return kind;
+        }
+    }
+    return std::nullopt;
+}
+
 } // namespace smith

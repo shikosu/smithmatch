@@ -268,7 +268,7 @@ void SmithChartView::draw(const ChartScene& scene, const ChartOptions& options) 
     }
     const ImVec2 origin = ImGui::GetCursorScreenPos();
     ImGui::InvisibleButton("##smithchart", avail);
-    const bool hovered = ImGui::IsItemHovered();
+    const bool hovered = ImGui::IsItemHovered() && !options.suppressHover;
 
     rectMin_ = origin;
     rectMax_ = ImVec2(origin.x + avail.x, origin.y + avail.y);

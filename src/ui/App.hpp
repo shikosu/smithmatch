@@ -30,9 +30,27 @@ public:
     void run();
 
 private:
+    // Actions qui peuvent perdre des modifications (on demande confirmation si le projet est modifié).
+    enum class PendingAction { None, NewProject, OpenFile, Quit };
+
     void drawFrame();       // construit toute l'interface d'une image
     void drawMenuBar();     // menus File / View / Help
     void drawStatusBar(float width);
+    void drawDialogs();     // « Unsaved changes », Quick guide, About
+    void handleShortcuts(); // Ctrl/Cmd + N, O, S, Maj+S
+
+    // --- Fichiers ---------------------------------------------------------------------------
+    void requestAction(PendingAction action);    // demande confirmation si nécessaire, puis exécute
+    void performAction(PendingAction action);
+    void loadFromPath(const std::string& path);
+    bool saveProject();                          // false si annulé ou en erreur
+    bool saveProjectAs();
+    bool writeProjectTo(const std::string& path);
+    void exportPng();
+    void exportCsv();
+    void capturePngIfRequested();                // appelé juste après le rendu, avant l'échange des tampons
+    void setCurrentFile(const std::string& path);
+    static void onWindowCloseRequested(GLFWwindow* window);
     ChartScene buildScene() const;   // prépare ce que l'abaque doit dessiner
     void setStatus(const std::string& text, bool isError);
     void updateWindowTitle();
@@ -43,7 +61,8 @@ private:
     // --- Document -------------------------------------------------------------
     Project project_;             // l'état du document
     bool modified_ = false;       // modifications non enregistrées
-    std::string fileName_;        // vide = « Untitled »
+    std::string fileName_;        // nom affiché ; vide = « Untitled »
+    std::string filePath_;        // chemin complet (UTF-8) ; vide = jamais enregistré
 
     // --- Vues et panneaux ---------------------------------------------------------
     SmithChartView chart_;
@@ -65,6 +84,14 @@ private:
     float bottomHeight_ = 240.0f;
     float networkHeight_ = 330.0f;    // hauteur du panneau NETWORK dans la colonne de droite
     float sweepWidth_ = 700.0f;       // largeur du panneau SWEEP dans la rangée du bas
+
+    // --- Dialogues et exports en attente ------------------------------------------------------------
+    PendingAction pendingAction_ = PendingAction::None;
+    bool openUnsavedPopup_ = false;
+    bool showQuickGuide_ = false;
+    bool showAbout_ = false;
+    std::string pngRequestPath_;     // chemin demandé pour l'export PNG (vide = aucun)
+    bool pngCaptureNow_ = false;     // la capture se fait à la fin de CETTE image
 
     // --- Barre d'état ------------------------------------------------------------------------
     std::string statusText_;
