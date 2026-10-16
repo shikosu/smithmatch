@@ -21,6 +21,14 @@ project(SmithMatch
     DESCRIPTION "Impedance matching with an interactive Smith chart"
     LANGUAGES C CXX)
 
+# macOS : on active l'Objective-C ICI, à la racine du projet.
+# GLFW l'active lui-même dans un sous-dossier, mais les règles de compilation
+# Objective-C ne sont alors visibles que dans ce sous-dossier : la bibliothèque
+# NFD (fichier .m) recevait des règles vides, et libnfd.a n'était jamais créée.
+if(APPLE)
+    enable_language(OBJC)
+endif()
+
 # --- Options configurables (cmake -DOPTION=ON/OFF) ---------------------------
 option(SMITH_BUILD_APP          "Build the graphical application"            ON)
 option(SMITH_BUILD_TESTS        "Build the unit tests"                       ON)
